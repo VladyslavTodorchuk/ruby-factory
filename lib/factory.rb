@@ -8,12 +8,14 @@
 # - each
 # - each_pair
 # - dig
-# - size/length
-# - members
-# - select
+# - members done
+# - select done
+# - length/size done
 # - to_a
-# - values_at
-# - ==, eql?
+# - [] done
+# - []= done
+# - values_at done
+# - ==, eql? done
 
 # frozen_string_literal: true
 
@@ -35,23 +37,63 @@ class Factory
         end
       end
 
-      def [](argument)
-        if argument.instance_of? Integer
-          raise IndexError, 'No such attribute' unless (0...class_attributes.length).cover?(argument)
-
-          inst_name = instance_variables[argument]
-        else
-          inst_name = "@#{argument}"
-        end
+      define_method :[] do |argument|
+        inst_name = if argument.instance_of? Integer
+                      instance_variables[argument]
+                    else
+                      "@#{argument}"
+                    end
         instance_variable_get(inst_name)
       end
 
-      def length
+      define_method :[]= do |argument, value|
+        inst_name = if argument.instance_of? Integer
+                      instance_variables[argument]
+                    else
+                      "@#{argument}"
+                    end
+        instance_variable_set(inst_name, value)
+      end
+
+      define_method :values_at do |*values|
+        if values.instance_of? Array
+          instances = []
+          values.each { |element| instances << instance_variable_get(instance_variables[element]) }
+          return instances
+        end
+        instance_variable_get(instance_variables[values])
+      end
+
+      define_method :length do
         instance_variables.length
       end
 
-      def size
+      define_method :size do
         instance_variables.length
+      end
+
+      define_method :select do |&method|
+        instances = []
+        instance_variables.each { |instant| instances << instance_variable_get(instant) }
+        instances.select(&method)
+      end
+
+      define_method :members do
+        class_attributes
+      end
+
+      define_method :== do |obj|
+        raise TypeError, 'Obj is nil' if obj.nil?
+
+        return false unless instance_variables == obj.instance_variables
+
+        return true if attributes == obj.attributes
+
+        false
+      end
+
+      define_method :attributes do
+        instance_variables.map { |symbol| instance_variable_get symbol }
       end
 
       class_eval(&code_block) if block_given?
