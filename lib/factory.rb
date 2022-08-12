@@ -7,9 +7,9 @@
 # * We must have an ability to get/set the value of attribute like [0], ['attribute_name'], [:attribute_name]
 #
 # * Instance of creatable Factory class should correctly respond to main methods of Struct
-# - each
-# - each_pair
-# - dig
+# - each done
+# - each_pair done
+# - dig done
 # - size/length done
 # - members done
 # - select done
@@ -18,8 +18,6 @@
 # - ==, eql? done
 
 class Factory
-  attr_accessor :name, :new_class
-
   def self.new(*class_arguments, &code_block)
     if class_arguments[0].instance_of? String
       @name = class_arguments[0]
@@ -29,14 +27,10 @@ class Factory
     @new_class = Class.new do
       attr_accessor(*class_arguments)
 
-      define_method :class_attributes do
-        class_arguments
-      end
+      define_method :initialize do |*argument_values|
+        raise ArgumentError, 'Wrong count of args' if argument_values.length != class_arguments.length
 
-      def initialize(*argument_values)
-        raise ArgumentError, 'Wrong count of args' if argument_values.length != class_attributes.length
-
-        instance_hash = class_attributes.zip(argument_values)
+        instance_hash = class_arguments.zip(argument_values)
         instance_hash.each do |attribute, value|
           instance_variable_set("@#{attribute}", value)
         end
@@ -61,12 +55,7 @@ class Factory
       end
 
       define_method :values_at do |*values|
-        if values.instance_of? Array
-          instances = []
-          values.each { |element| instances << instance_variable_get(instance_variables[element]) }
-          return instances
-        end
-        instance_variable_get(instance_variables[values])
+        to_a.values_at(*values)
       end
 
       def length
@@ -79,17 +68,13 @@ class Factory
       end
 
       define_method :members do
-        class_attributes
+        class_arguments
       end
 
       def ==(obj)
         raise TypeError, 'Obj is nil' if obj.nil?
 
-        return false unless instance_variables == obj.instance_variables
-
-        return true if attributes_values == obj.attributes_values
-
-        false
+        self.class == obj.class && self.to_a == obj.to_a
       end
       alias :eql? :==
 
@@ -98,7 +83,7 @@ class Factory
       end
 
       define_method :each_pair do |&block|
-        class_attributes.zip(attributes_values).to_h.each(&block)
+        members.zip(attributes_values).to_h.each(&block)
       end
 
       define_method :each do |&block|
@@ -106,7 +91,7 @@ class Factory
       end
 
       define_method :dig do |*args|
-       args.inject(self) { |value, elem| value[elem] if value }
+        args.inject(self) { |value, elem| value[elem] if value }
       end
 
       define_method :attributes_values do

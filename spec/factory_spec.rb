@@ -4,7 +4,9 @@ require_relative '../lib/factory'
 
 RSpec.describe 'Factory' do
   before do
-    Object.send(:remove_const, :Customer) if Object.constants.include?(:Customer)
+    if Object.constants.include?(:Customer)
+      Object.send(:remove_const, :Customer)
+    end
   end
 
   it 'creates factory in a namespace' do
