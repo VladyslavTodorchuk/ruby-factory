@@ -106,7 +106,7 @@ class Factory
       end
 
       define_method :dig do |*args|
-        # dig into
+       args.inject(self) { |value, elem| value[elem] if value }
       end
 
       define_method :attributes_values do
@@ -116,6 +116,6 @@ class Factory
       class_eval(&code_block) if block_given?
     end
 
-    self.const_set(@name, @new_class)
+    @name.nil? ? @new_class : self.const_set(@name, @new_class)
   end
 end
