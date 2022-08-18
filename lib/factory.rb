@@ -61,8 +61,8 @@ class Factory
         end
         alias :size :length
 
-        define_method :select do |&method|
-          attributes_values.select(&method)
+        define_method :select do |&block|
+          attributes_values.select(&block)
         end
 
         define_method :members do
